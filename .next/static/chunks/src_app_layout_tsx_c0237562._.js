@@ -14,7 +14,7 @@
   "static/chunks/node_modules_sucrase_dist_esm_parser_6a1fcaa9._.js",
   "static/chunks/node_modules_sucrase_dist_esm_transformers_5a82d580._.js",
   "static/chunks/node_modules_sucrase_dist_esm_28c680cc._.js",
-  "static/chunks/node_modules_618cce6e._.js"
+  "static/chunks/node_modules_6ada2b51._.js"
 ],
     source: "dynamic"
 });
