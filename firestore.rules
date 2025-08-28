@@ -1,0 +1,58 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(docData) {
+      return isSignedIn() && request.auth.uid == docData.ownerId;
+    }
+    
+    function isCreatingOwnDoc() {
+      return isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // Surveys: Users can only access their own surveys.
+    match /surveys/{surveyId} {
+      allow read, update, delete: if isOwner(resource.data);
+      allow create: if isCreatingOwnDoc();
+    }
+    // Cross-comm (Notifications): Can be read by sender or receiver.
+    // Can only be created by the sender.
+    match /cross_comm/{commId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.to || request.auth.uid == resource.data.from);
+      allow create: if isSignedIn() && request.resource.data.from == request.auth.uid;
+    }
+
+    // Conversations & Messages: Similar to cross-comm, access is granted
+    // to members of the conversation.
+    match /conversations/{conversationId} {
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.memberIds;
+      
+       match /messages/{messageId} {
+         allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.memberIds;
+       }
+    }
+
+    // Employees: Users can only access their own employee records.
+    match /employees/{employeeId} {
+      allow read, update, delete: if isOwner(resource.data);
+      allow create: if isCreatingOwnDoc();
+    }
+
+
+    // Generic rule for most user-owned documents
+    match /{collection}/{docId} {
+      // Applies to: tasks, contacts, deals, automations, invoices, 
+      // leaveRequests, leaveBalances, boms, manufacturing_orders,
+      // inventory, appointments, users
+      allow read, update, delete: if isOwner(resource.data);
+      allow create: if isCreatingOwnDoc();
+    }
+  }
+}
